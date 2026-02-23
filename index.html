@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Biblia Pro</title>
+    <title>Biblia Pro + Quiz Edv</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -12,7 +12,7 @@
     <script src="data/cornilescu.js"></script>
 
     <style>
-        :root { --p: #1a2a6c; --a: #d32f2f; }
+        :root { --p: #1a2a6c; --a: #d32f2f; --s: #28a745; }
         
         body, html { 
             background: #f4f7f6; margin: 0; padding: 0; 
@@ -21,38 +21,30 @@
         }
         
         header { background: white; padding: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0; }
-        
         .main-content { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; }
 
         .nav-custom { 
             background: white; border-radius: 50px; padding: 3px; 
             display: inline-flex; box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-            margin: 0 auto 15px auto; flex-shrink: 0;
+            margin: 0 auto 10px auto; flex-shrink: 0;
         }
         
-        .nav-link { border-radius: 50px !important; font-weight: bold; color: #666; padding: 6px 15px !important; font-size: 0.8rem; }
+        .nav-link { border-radius: 50px !important; font-weight: bold; color: #666; padding: 6px 12px !important; font-size: 0.75rem; }
         .nav-link.active { background: var(--p) !important; color: white !important; }
 
-        .card-premium { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); width: 100%; }
-
-        /* Stil selectori pe un singur rand */
+        .card-premium { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); width: 100%; margin-bottom: 10px; }
         .bible-nav-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 4px; }
-        .form-select-sm { font-size: 0.75rem !important; padding-right: 20px !important; }
-
-        #q-txt { font-family: 'Lora', serif; font-size: 1.1rem; line-height: 1.4; color: #2c3e50; margin-bottom: 10px; max-height: 140px; overflow-y: auto; }
-        .quiz-btn { padding: 10px !important; font-size: 0.85rem !important; margin-bottom: 6px; border-radius: 12px !important; }
-
-        #citire-text { font-family: 'Lora', serif; font-size: 1.15rem; background: white; padding: 15px; border-radius: 15px; text-align: justify; }
+        #citire-text { font-family: 'Lora', serif; font-size: 1.15rem; background: white; padding: 15px; border-radius: 15px; text-align: justify; line-height: 1.6; }
         .verse-num { color: var(--p); font-weight: 800; font-size: 0.7rem; margin-right: 4px; background: #eee; padding: 1px 3px; border-radius: 3px; }
-        .highlight { background: #fff3cd; border-radius: 4px; padding: 2px 0; }
+        .highlight { background: #fff3cd; border-radius: 4px; }
 
-        .btn-home-float { 
-            position: fixed; bottom: 15px; right: 15px; 
-            background: var(--p); color: white; border: none; 
-            border-radius: 50%; width: 50px; height: 50px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; 
-            display: flex; align-items: center; justify-content: center; 
-        }
+        .btn-check-cap { width: 100%; margin-top: 15px; border-radius: 12px; font-weight: bold; transition: 0.3s; }
+        .btn-home-float { position: fixed; bottom: 15px; right: 15px; background: var(--p); color: white; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; z-index: 1000; border: none; }
+        
+        /* Quiz Styles */
+        .quiz-btn { padding: 12px !important; font-size: 0.9rem !important; margin-bottom: 8px; border-radius: 12px !important; width: 100%; transition: 0.3s; border-width: 2px !important; }
+        #q-txt { font-family: 'Montserrat', sans-serif; font-weight: 700; color: #2c3e50; min-height: 50px; }
+        .ref-hint { font-size: 0.85rem; color: #555; font-style: italic; margin-top: 5px; display: block; }
     </style>
 </head>
 <body>
@@ -68,6 +60,7 @@
             <li class="nav-item"><button class="nav-link active" id="tab1" data-bs-toggle="pill" data-bs-target="#daily">ASTĂZI</button></li>
             <li class="nav-item"><button class="nav-link" id="tab2" data-bs-toggle="pill" data-bs-target="#read" onclick="initRead()">CITIRE</button></li>
             <li class="nav-item"><button class="nav-link" id="tab3" data-bs-toggle="pill" data-bs-target="#quiz" onclick="startQuiz()">QUIZ</button></li>
+            <li class="nav-item"><button class="nav-link" id="tab4" data-bs-toggle="pill" data-bs-target="#progress" onclick="updateProgressUI()">PROGRES</button></li>
         </ul>
     </div>
 
@@ -89,14 +82,28 @@
                 </div>
             </div>
             <div id="citire-text">Selectează...</div>
+            <button id="btn-finish-cap" class="btn btn-outline-success btn-check-cap shadow-sm" onclick="toggleChapterRead()">
+                <i class="far fa-check-circle me-2"></i>Am citit acest capitol
+            </button>
         </div>
 
         <div class="tab-pane fade" id="quiz">
             <div class="card-premium">
-                <div id="q-txt" class="p-2 bg-light rounded-3 text-center italic"></div>
+                <div id="q-txt" class="p-2 text-center mb-3">Se încarcă întrebarea...</div>
                 <div id="q-opts" class="d-grid"></div>
-                <div id="q-res" class="text-center fw-bold mt-1"></div>
+                <div id="q-res" class="text-center fw-bold mt-2" style="min-height: 50px;"></div>
             </div>
+        </div>
+
+        <div class="tab-pane fade" id="progress">
+            <div class="card-premium text-center">
+                <h6 class="fw-bold" style="color: var(--p);">PROGRES TOTAL BIBLIE</h6>
+                <div class="progress shadow-sm" style="height: 20px; border-radius: 10px; margin: 10px 0;">
+                    <div id="total-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%">0%</div>
+                </div>
+                <small id="total-stats" class="text-muted">0 din 1189 capitole citite</small>
+            </div>
+            <div id="list-progress" class="card-premium overflow-auto" style="max-height: 300px;"></div>
         </div>
     </div>
 </div>
@@ -105,6 +112,19 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // --- DATABASE ÎNTREBĂRI MIXTE CU REFERINȚE (q: intrebare, a: optiuni, c: index corect, r: referinta) ---
+    const intrebariBiblice = [
+        { q: "Cine l-a trădat pe Isus pentru 30 de arginți?", a: ["Iuda Iscarioteanul", "Petru", "Ioan", "Toma"], c: 0, r: "Matei 26:14-16" },
+        { q: "Unde S-a născut Isus Hristos?", a: ["Ierusalim", "Nazaret", "Betleem", "Ierihon"], c: 2, r: "Matei 2:1" },
+        { q: "Moise a despărțit apele Mării Roșii.", a: ["Adevărat", "Fals"], c: 0, r: "Exod 14:21-22" },
+        { q: "Câte zile a plouat în timpul potopului lui Noe?", a: ["7 zile", "12 zile", "40 de zile", "100 de zile"], c: 2, r: "Geneza 7:12" },
+        { q: "Cine a fost aruncat în groapa cu lei?", a: ["Iosif", "Daniel", "David", "Solomon"], c: 1, r: "Daniel 6:16" },
+        { q: "Pavel a fost unul dintre cei 12 ucenici inițiali.", a: ["Adevărat", "Fals"], c: 1, r: "Faptele Apostolilor 9 (Pavel a fost chemat ulterior)" },
+        { q: "Care a fost prima minune a lui Isus?", a: ["Vindecarea", "Pâinile", "Apa în vin", "Mersul pe apă"], c: 2, r: "Ioan 2:11" },
+        { q: "Cine l-a ucis pe uriașul Goliat?", a: ["Saul", "David", "Samson", "Ghedeon"], c: 1, r: "1 Samuel 17:50" }
+    ];
+
+    let readChapters = JSON.parse(localStorage.getItem('bibleProgress')) || {};
     window.onload = () => setTimeout(genereazaVerset, 600);
 
     function goHome() {
@@ -120,6 +140,7 @@
         }
     }
 
+    // --- LOGICA CITIRE ---
     function initRead() {
         const sc = document.getElementById('sel-c');
         if (sc.options.length > 0) return;
@@ -139,14 +160,13 @@
 
     function showCap() {
         const c = document.getElementById('sel-c').value;
-        const cp = parseInt(document.getElementById('sel-cap').value);
-        const vers = bibleData.verses.filter(v => v.book_name === c && v.chapter === cp);
-        const cont = document.getElementById('citire-text');
-        cont.innerHTML = vers.map(v => `<span id="v-${v.verse}"><span class="verse-num">${v.verse}</span>${v.text} </span>`).join('');
-        
+        const cp = document.getElementById('sel-cap').value;
+        const vers = bibleData.verses.filter(v => v.book_name === c && v.chapter == cp);
+        document.getElementById('citire-text').innerHTML = vers.map(v => `<span id="v-${v.verse}"><span class="verse-num">${v.verse}</span>${v.text} </span>`).join('');
         const sv = document.getElementById('sel-v');
         sv.innerHTML = '<option value="0">V.</option>';
         vers.forEach(v => sv.add(new Option(v.verse, v.verse)));
+        updateCheckButton(c, cp);
     }
 
     function goToV() {
@@ -154,46 +174,98 @@
         if(v == 0) return;
         document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
         const target = document.getElementById('v-' + v);
-        if(target) {
-            target.classList.add('highlight');
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if(target) { target.classList.add('highlight'); target.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    }
+
+    function toggleChapterRead() {
+        const c = document.getElementById('sel-c').value;
+        const cp = document.getElementById('sel-cap').value;
+        const key = `${c}|${cp}`;
+        if (readChapters[key]) delete readChapters[key]; else readChapters[key] = true;
+        localStorage.setItem('bibleProgress', JSON.stringify(readChapters));
+        updateCheckButton(c, cp);
+    }
+
+    function updateCheckButton(c, cp) {
+        const btn = document.getElementById('btn-finish-cap');
+        const key = `${c}|${cp}`;
+        if (readChapters[key]) {
+            btn.className = "btn btn-success btn-check-cap shadow-sm";
+            btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Capitol citit!';
+        } else {
+            btn.className = "btn btn-outline-success btn-check-cap shadow-sm";
+            btn.innerHTML = '<i class="far fa-check-circle me-2"></i>Am citit acest capitol';
         }
     }
 
-    let ok = "";
+    function updateProgressUI() {
+        const totalCapitole = 1189;
+        const citite = Object.keys(readChapters).length;
+        const procente = Math.round((citite / totalCapitole) * 100);
+        document.getElementById('total-bar').style.width = procente + "%";
+        document.getElementById('total-bar').innerText = procente + "%";
+        document.getElementById('total-stats').innerText = `${citite} din ${totalCapitole} capitole citite`;
+        const listDiv = document.getElementById('list-progress');
+        listDiv.innerHTML = '<h6 class="small fw-bold mb-2">DETALII PE CĂRȚI:</h6>';
+        const carti = [...new Set(bibleData.verses.map(v => v.book_name))];
+        carti.forEach(carte => {
+            const cititeInBook = Object.keys(readChapters).filter(k => k.startsWith(carte + "|")).length;
+            if (cititeInBook > 0) {
+                const totalCapsInBook = [...new Set(bibleData.verses.filter(v => v.book_name === carte).map(v => v.chapter))].length;
+                listDiv.innerHTML += `<div class="book-stat" style="display: flex; justify-content: space-between; font-size: 0.85rem; padding: 5px 0; border-bottom: 1px solid #eee;"><span>${carte}</span><span class="fw-bold text-success">${cititeInBook}/${totalCapsInBook}</span></div>`;
+            }
+        });
+    }
+
+    // --- LOGICA QUIZ MIXT CU REFERINȚE ---
     let quizBlocat = false;
 
     function startQuiz() {
         quizBlocat = false;
-        const v = bibleData.verses[Math.floor(Math.random() * bibleData.verses.length)];
-        ok = v.book_name + " " + v.chapter + ":" + v.verse;
-        document.getElementById('q-txt').innerText = v.text;
+        const intrebare = intrebariBiblice[Math.floor(Math.random() * intrebariBiblice.length)];
+        const indexCorect = intrebare.c;
+        const raspunsCorect = intrebare.a[indexCorect];
+        const referinta = intrebare.r;
+        
+        document.getElementById('q-txt').innerText = intrebare.q;
         document.getElementById('q-res').innerText = "";
-        let o = [ok];
-        while(o.length < 4) {
-            let rx = bibleData.verses[Math.floor(Math.random() * bibleData.verses.length)];
-            let ref = rx.book_name + " " + rx.chapter + ":" + rx.verse;
-            if(!o.includes(ref)) o.push(ref);
-        }
-        o.sort(() => Math.random() - 0.5);
+        
         const od = document.getElementById('q-opts');
         od.innerHTML = "";
-        o.forEach(x => {
+        
+        intrebare.a.forEach((raspuns, index) => {
             let b = document.createElement('button');
             b.className = "btn btn-outline-primary quiz-btn bg-white fw-bold shadow-sm";
-            b.innerText = x;
+            b.innerText = raspuns;
+            
             b.onclick = () => {
                 if(quizBlocat) return;
                 quizBlocat = true;
-                if(x === ok) {
-                    b.className = "btn btn-success quiz-btn text-white";
-                    document.getElementById('q-res').innerHTML = "<span class='text-success'>CORECT! ✅</span>";
+                
+                if(index === indexCorect) {
+                    b.classList.replace('btn-outline-primary', 'btn-success');
+                    b.classList.remove('bg-white');
+                    document.getElementById('q-res').innerHTML = `
+                        <div class="text-success">CORECT! ✅</div>
+                        <span class="ref-hint">Vezi: ${referinta}</span>
+                    `;
                 } else {
-                    b.className = "btn btn-danger quiz-btn text-white";
-                    document.getElementById('q-res').innerHTML = `<span class='text-danger'>ERA ${ok} ❌</span>`;
-                    Array.from(od.children).forEach(btn => { if(btn.innerText === ok) btn.className = "btn btn-success quiz-btn text-white"; });
+                    b.classList.replace('btn-outline-primary', 'btn-danger');
+                    b.classList.remove('bg-white');
+                    document.getElementById('q-res').innerHTML = `
+                        <div class="text-danger">GREȘIT! ERA: ${raspunsCorect} ❌</div>
+                        <span class="ref-hint">Referință: ${referinta}</span>
+                    `;
+                    
+                    Array.from(od.children).forEach((btn, idx) => {
+                        if(idx === indexCorect) {
+                            btn.classList.replace('btn-outline-primary', 'btn-success');
+                            btn.classList.remove('bg-white');
+                        }
+                    });
                 }
-                setTimeout(startQuiz, 2200);
+                // Am mărit timpul la 4 secunde pentru a apuca să citească referința
+                setTimeout(startQuiz, 4000);
             };
             od.appendChild(b);
         });
