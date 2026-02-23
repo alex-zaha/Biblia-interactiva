@@ -30,6 +30,8 @@
         .save-icon:hover { color: var(--a); }
         .saved-item { border-left: 4px solid var(--a); padding-left: 10px; margin-bottom: 15px; font-size: 0.9rem; position: relative; }
         .ref-hint { font-size: 0.85rem; color: var(--a); font-weight: bold; display: block; margin-top: 5px; }
+        .ref-link { text-decoration: underline; cursor: pointer; color: var(--a); }
+        .ref-instruction { font-weight: normal; font-size: 0.75rem; color: #888; font-style: italic; }
     </style>
 </head>
 <body>
@@ -43,10 +45,10 @@
 <div class="container py-2 text-center">
     <div class="nav-custom shadow-sm">
         <ul class="nav nav-pills" id="pills-tab">
-            <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#daily">ASTĂZI</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#read" onclick="initRead()">CITIRE</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#saved" onclick="afiseazaSalvate()">SALVATE</button></li>
-            <li class="nav-item"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#quiz">QUIZ</button></li>
+            <li class="nav-item"><button class="nav-link active" id="btn-daily" data-bs-toggle="pill" data-bs-target="#daily">ASTĂZI</button></li>
+            <li class="nav-item"><button class="nav-link" id="btn-read" data-bs-toggle="pill" data-bs-target="#read" onclick="initRead()">CITIRE</button></li>
+            <li class="nav-item"><button class="nav-link" id="btn-saved" data-bs-toggle="pill" data-bs-target="#saved" onclick="afiseazaSalvate()">SALVATE</button></li>
+            <li class="nav-item"><button class="nav-link" id="btn-quiz" data-bs-toggle="pill" data-bs-target="#quiz">QUIZ</button></li>
         </ul>
     </div>
 
@@ -75,7 +77,7 @@
             <div class="card-premium">
                 <h5 class="fw-bold mb-3" style="color: var(--p);"><i class="fas fa-bookmark me-2 text-danger"></i>Versete Salvate</h5>
                 <div id="lista-salvate">
-                    <p class="text-muted small">Nu ai salvat niciun verset încă. Apasă pe iconița de lângă versete în secțiunea Citire.</p>
+                    <p class="text-muted small">Nu ai salvat nimic.</p>
                 </div>
             </div>
         </div>
@@ -83,7 +85,6 @@
         <div class="tab-pane fade" id="quiz">
             <div id="quiz-login" class="card-premium text-center">
                 <h5 class="fw-bold mb-3">Provocarea Biblică</h5>
-                <p class="text-muted small">Introdu numele pentru a salva progresul în baza de date.</p>
                 <input type="text" id="user-name" class="form-control mb-3 text-center rounded-pill" placeholder="Numele tău">
                 <button onclick="startQuizFlow()" class="btn btn-primary w-100 rounded-pill fw-bold py-2 mb-2">START QUIZ (30 Întrebări)</button>
                 <button onclick="setNumeSiVezi()" class="btn btn-outline-secondary btn-sm w-100 rounded-pill">VEZI DOAR ISTORICUL MEU</button>
@@ -100,7 +101,7 @@
                     <div id="q-opts" class="mt-3"></div>
                     <div id="q-res" class="mt-3" style="min-height: 50px;"></div>
                     <hr>
-                    <button onclick="veziRezultate()" class="btn btn-light btn-sm w-100 text-muted">Verifică baza de date acum</button>
+                    <button onclick="veziRezultate()" class="btn btn-light btn-sm w-100 text-muted">Verifică rezultatele mele</button>
                 </div>
 
                 <div id="tabel-rezultate" class="mt-4 d-none">
@@ -123,7 +124,6 @@
 
     let userName = "", score = 0, quizBlocat = false, intrebariSession = [], pasActual = 0;
 
-    // 1. VERSETUL ZILEI
     function genereazaVerset() {
         if (typeof bibleData !== 'undefined') {
             const v = bibleData.verses[Math.floor(Math.random() * bibleData.verses.length)];
@@ -133,32 +133,23 @@
     }
     window.addEventListener('load', genereazaVerset);
 
-    // 2. SALVARE VERSETE (LOCAL STORAGE)
     function salveazaVerset(book, cap, vNum, text) {
         let salvate = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
         const ref = `${book} ${cap}:${vNum}`;
-        
         if (!salvate.some(s => s.ref === ref)) {
             salvate.push({ ref, text });
             localStorage.setItem('biblia_salvate', JSON.stringify(salvate));
             alert("Verset salvat!");
-        } else {
-            alert("Acest verset este deja salvat.");
-        }
+        } else { alert("Deja salvat."); }
     }
 
     function afiseazaSalvate() {
         const container = document.getElementById('lista-salvate');
         let salvate = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
-        
-        if (salvate.length === 0) {
-            container.innerHTML = '<p class="text-muted small">Nu ai salvat niciun verset încă.</p>';
-            return;
-        }
-
+        if (salvate.length === 0) { container.innerHTML = '<p class="text-muted small">Nu ai salvat nimic.</p>'; return; }
         container.innerHTML = salvate.map((v, index) => `
             <div class="saved-item">
-                <div class="fw-bold text-primary" style="font-size:0.8rem;">${v.ref}</div>
+                <div class="fw-bold text-primary" style="font-size:0.8rem; cursor:pointer" onclick="navigheazaLaReferinta('${v.ref}')">${v.ref} <span class="ref-instruction">(apasă)</span></div>
                 <div>${v.text}</div>
                 <button onclick="stergeVerset(${index})" class="btn btn-sm text-danger p-0 mt-1" style="font-size:0.7rem;">Șterge</button>
             </div>
@@ -172,7 +163,26 @@
         afiseazaSalvate();
     }
 
-    // 3. CITIRE BIBLIE
+    function navigheazaLaReferinta(refString) {
+        const parts = refString.match(/^(.+?)\s(\d+):(\d+)/);
+        if (!parts) return;
+        const carte = parts[1].trim();
+        const capitol = parts[2];
+        const verset = parts[3];
+        const triggerEl = document.querySelector('#btn-read');
+        const tab = new bootstrap.Tab(triggerEl);
+        tab.show();
+        initRead();
+        document.getElementById('sel-c').value = carte;
+        updateCap();
+        document.getElementById('sel-cap').value = capitol;
+        showCap();
+        setTimeout(() => {
+            document.getElementById('sel-v').value = verset;
+            sariLaVerset();
+        }, 300);
+    }
+
     function initRead() {
         if (typeof bibleData === 'undefined') return;
         const sc = document.getElementById('sel-c');
@@ -194,11 +204,9 @@
         const c = document.getElementById('sel-c').value;
         const cp = document.getElementById('sel-cap').value;
         const vers = bibleData.verses.filter(v => v.book_name === c && v.chapter == cp);
-        
         const sv = document.getElementById('sel-v');
         sv.innerHTML = '<option value="">Verset...</option>';
         vers.forEach(v => sv.add(new Option("V. " + v.verse, v.verse)));
-
         document.getElementById('citire-text').innerHTML = vers.map(v => `
             <span id="v-${v.verse}" class="verset-wrapper" onclick="evidentiazaVerset(this)">
                 <b style="color:var(--a); font-size:0.8rem;">${v.verse}</b> ${v.text}
@@ -223,10 +231,9 @@
         }
     }
 
-    // 4. QUIZ LOGIC (Neschimbat)
     function startQuizFlow() {
         const input = document.getElementById('user-name');
-        if(input.value.trim().length < 2) { alert("Introdu un nume valid!"); return; }
+        if(input.value.trim().length < 2) { alert("Nume invalid!"); return; }
         userName = input.value.trim();
         intrebariSession = [...intrebariBiblice].sort(() => 0.5 - Math.random());
         document.getElementById('quiz-login').classList.add('d-none');
@@ -237,11 +244,12 @@
 
     function setNumeSiVezi() {
         const input = document.getElementById('user-name');
-        if(input.value.trim().length < 2) { alert("Introdu numele pentru căutare!"); return; }
+        if(input.value.trim().length < 2) { alert("Nume!"); return; }
         userName = input.value.trim();
         document.getElementById('quiz-login').classList.add('d-none');
         document.getElementById('quiz-box').classList.remove('d-none');
         document.getElementById('quiz-content').classList.add('d-none');
+        document.getElementById('player-display').innerText = "👤 " + userName;
         veziRezultate();
     }
 
@@ -257,7 +265,7 @@
 
     function startQuiz() {
         if (pasActual >= 30) {
-            document.getElementById('q-txt').innerHTML = "<span class='text-success'>Felicitări!</span>";
+            document.getElementById('q-txt').innerHTML = "<span class='text-success'>Final!</span>";
             document.getElementById('q-opts').innerHTML = "";
             veziRezultate();
             return;
@@ -301,15 +309,25 @@
             date.forEach(rand => {
                 const esteCorect = (rand.rezultat === "Corect");
                 const badgeClass = esteCorect ? "bg-success" : "bg-danger";
-                listaBody.innerHTML += `<tr><td style="padding: 10px 0;"><div style="font-size: 0.85rem; font-weight: 600;">${rand.intrebare}</div></td><td class="text-end"><span class="badge ${badgeClass}">${rand.rezultat}</span></td></tr>`;
+                const infoIntrebare = intrebariBiblice.find(i => i.q === rand.intrebare);
+                const referinta = (!esteCorect && infoIntrebare) ? `<div class="ref-hint">Vezi: <span class="ref-link" onclick="navigheazaLaReferinta('${infoIntrebare.r}')">${infoIntrebare.r}</span> <span class="ref-instruction">(apasă pentru citire)</span></div>` : "";
+
+                listaBody.innerHTML += `
+                    <tr>
+                        <td style="padding: 10px 0;">
+                            <div style="font-size: 0.85rem; font-weight: 600;">${rand.intrebare}</div>
+                            ${referinta}
+                        </td>
+                        <td class="text-end" style="vertical-align:middle;"><span class="badge ${badgeClass}">${rand.rezultat}</span></td>
+                    </tr>`;
             });
         } catch (e) { listaBody.innerHTML = "<tr><td>Eroare!</td></tr>"; }
     }
 
     const intrebariBiblice = [
-        { q: "Cine l-a trădat pe Isus pentru 30 de arginți?", a: ["Iuda Iscarioteanul", "Petru", "Ioan", "Toma"], c: 0, r: "Matei 26:14-16" },
+        { q: "Cine l-a trădat pe Isus pentru 30 de arginți?", a: ["Iuda Iscarioteanul", "Petru", "Ioan", "Toma"], c: 0, r: "Matei 26:14" },
         { q: "Unde S-a născut Isus Hristos?", a: ["Ierusalim", "Nazaret", "Betleem", "Ierihon"], c: 2, r: "Matei 2:1" },
-        { q: "Moise a despărțit apele Mării Roșii.", a: ["Adevărat", "Fals"], c: 0, r: "Exod 14:21-22" },
+        { q: "Moise a despărțit apele Mării Roșii.", a: ["Adevărat", "Fals"], c: 0, r: "Exod 14:21" },
         { q: "Câte zile a plouat în timpul potopului lui Noe?", a: ["7 zile", "12 zile", "40 de zile", "100 de zile"], c: 2, r: "Geneza 7:12" },
         { q: "Care a fost prima minune a lui Isus?", a: ["Vindecarea", "Pâinile", "Apa în vin", "Mersul pe apă"], c: 2, r: "Ioan 2:11" },
         { q: "Cine l-a ucis pe uriașul Goliat?", a: ["Saul", "David", "Samson", "Ghedeon"], c: 1, r: "1 Samuel 17:50" },
@@ -317,23 +335,23 @@
         { q: "Care este prima carte a Bibliei?", a: ["Exod", "Levitic", "Geneza", "Psalmi"], c: 2, r: "Geneza 1:1" },
         { q: "Cine a fost aruncat în groapa cu lei?", a: ["Iov", "Daniel", "Iona", "Iosif"], c: 1, r: "Daniel 6:16" },
         { q: "Pe ce mare a umblat Isus pe jos?", a: ["Marea Roșie", "Marea Moartă", "Marea Galileii", "Marea Mediterană"], c: 2, r: "Matei 14:25" },
-        { q: "Cine a primit Cele Zece Porunci?", a: ["Avraam", "Isaac", "Moise", "Iacov"], c: 2, r: "Exod 20" },
+        { q: "Cine a primit Cele Zece Porunci?", a: ["Avraam", "Isaac", "Moise", "Iacov"], c: 2, r: "Exod 20:1" },
         { q: "Care era ocupația lui Petru înainte de a deveni ucenic?", a: ["Vameș", "Tâmplar", "Pescar", "Păstor"], c: 2, r: "Matei 4:18" },
-        { q: "Cine a construit corabia pentru potop?", a: ["Enoh", "Noe", "Lameh", "Matusalem"], c: 1, r: "Geneza 6:13-14" },
+        { q: "Cine a construit corabia pentru potop?", a: ["Enoh", "Noe", "Lameh", "Matusalem"], c: 1, r: "Geneza 6:14" },
         { q: "Cum se numea muntele unde a fost răstignit Isus?", a: ["Sinai", "Golgota", "Horeb", "Tabor"], c: 1, r: "Matei 27:33" },
         { q: "Cine a fost soția lui Adam?", a: ["Sara", "Rahela", "Eva", "Estera"], c: 2, r: "Geneza 3:20" },
-        { q: "Câte urgii au lovit Egiptul?", a: ["7", "12", "10", "3"], c: 2, r: "Exod 7-12" },
-        { q: "Cine a fost cel mai înțelept rege al Israelului?", a: ["Saul", "David", "Solomon", "Ezechia"], c: 2, r: "1 Împărați 3:12" },
+        { q: "Câte urgii au lovit Egiptul?", a: ["7", "12", "10", "3"], c: 2, r: "Exod 7:1" },
+        { q: "Cine a fost cel mai înțelept rege al Israelului?", a: ["Saul", "David", "Solomon", "Ezechia"], c: 2, r: "1 Imparati 3:12" },
         { q: "În ce oraș au fost numiți ucenicii 'creștini' prima dată?", a: ["Ierusalim", "Antiohia", "Roma", "Efes"], c: 1, r: "Fapte 11:26" },
         { q: "Cine l-a botezat pe Isus?", a: ["Petru", "Ioan Botezătorul", "Pavel", "Iacov"], c: 1, r: "Matei 3:13" },
         { q: "Care este ultima carte a Bibliei?", a: ["Evrei", "Iuda", "Apocalipsa", "Maleahi"], c: 2, r: "Apocalipsa 1:1" },
         { q: "Cine a fost fratele lui Moise?", a: ["Iosua", "Aaron", "Caleb", "Eleazar"], c: 1, r: "Exod 4:14" },
         { q: "Câte pâini a folosit Isus pentru a hrăni 5000 de oameni?", a: ["7 pâini", "5 pâini", "12 pâini", "3 pâini"], c: 1, r: "Matei 14:17" },
-        { q: "Cine a scris cele mai multe epistole în Noul Testament?", a: ["Petru", "Ioan", "Pavel", "Luca"], c: 2, r: "Noul Testament" },
+        { q: "Cine a scris cele mai multe epistole în Noul Testament?", a: ["Petru", "Ioan", "Pavel", "Luca"], c: 2, r: "Romani 1:1" },
         { q: "Ce animal a vorbit cu Balaam?", a: ["Un leu", "Un măgar", "Un șarpe", "Un miel"], c: 1, r: "Numeri 22:28" },
         { q: "Cine a fost vândut de frații săi în Egipt?", a: ["Benjamin", "Iosif", "Reuben", "Simeon"], c: 1, r: "Geneza 37:28" },
         { q: "Cât timp a stat Iona în pântecele peștelui?", a: ["1 zi", "7 zile", "3 zile și 3 nopți", "40 de zile"], c: 2, r: "Iona 1:17" },
-        { q: "Cine a fost mama lui Isus?", a: ["Elisabeta", "Marta", "Maria", "Magdalena"], c: 2, r: "Luca 1:30-31" },
+        { q: "Cine a fost mama lui Isus?", a: ["Elisabeta", "Marta", "Maria", "Magdalena"], c: 2, r: "Luca 1:30" },
         { q: "Din ce a fost făcută Eva?", a: ["Din țărână", "Dintr-o coastă", "Din aur", "Din suflare"], c: 1, r: "Geneza 2:22" },
         { q: "Cine a fost primul martir creștin?", a: ["Ștefan", "Iacov", "Filip", "Pavel"], c: 0, r: "Fapte 7:59" },
         { q: "Ce râu a fost folosit pentru botezul lui Isus?", a: ["Nil", "Eufrat", "Iordan", "Tigru"], c: 2, r: "Matei 3:13" }
