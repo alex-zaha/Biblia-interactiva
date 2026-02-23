@@ -14,70 +14,37 @@
     <style>
         :root { --p: #1a2a6c; --a: #d32f2f; }
         
-        /* Reset pentru a ocupa tot ecranul fara scroll pe body */
         body, html { 
-            background: #f4f7f6; 
-            margin: 0; padding: 0; 
-            height: 100%; 
-            width: 100%;
-            overflow: hidden; 
-            display: flex; 
-            flex-direction: column; 
+            background: #f4f7f6; margin: 0; padding: 0; 
+            height: 100%; width: 100%; overflow: hidden; 
+            display: flex; flex-direction: column; 
         }
         
         header { background: white; padding: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); flex-shrink: 0; }
         
-        /* Zona principala devine flexibila */
-        .main-content { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 10px; 
-            display: flex;
-            flex-direction: column;
-        }
+        .main-content { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; }
 
         .nav-custom { 
-            background: white; 
-            border-radius: 50px; 
-            padding: 3px; 
-            display: inline-flex; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
-            margin: 0 auto 15px auto;
-            flex-shrink: 0;
+            background: white; border-radius: 50px; padding: 3px; 
+            display: inline-flex; box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+            margin: 0 auto 15px auto; flex-shrink: 0;
         }
         
-        .nav-link { border-radius: 50px !important; font-weight: bold; color: #666; padding: 6px 15px !important; font-size: 0.85rem; }
+        .nav-link { border-radius: 50px !important; font-weight: bold; color: #666; padding: 6px 15px !important; font-size: 0.8rem; }
         .nav-link.active { background: var(--p) !important; color: white !important; }
 
-        .card-premium { 
-            background: white; 
-            border-radius: 20px; 
-            padding: 20px; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-            width: 100%;
-        }
+        .card-premium { background: white; border-radius: 20px; padding: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); width: 100%; }
 
-        /* Ajustare Quiz pentru a incapea pe ecran */
-        #q-txt { 
-            font-family: 'Lora', serif; 
-            font-size: 1.1rem; 
-            line-height: 1.4;
-            color: #2c3e50; 
-            margin-bottom: 15px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        
-        .quiz-btn { 
-            padding: 12px !important; 
-            font-size: 0.9rem !important; 
-            margin-bottom: 8px; 
-            border-radius: 12px !important;
-        }
+        /* Stil selectori pe un singur rand */
+        .bible-nav-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 4px; }
+        .form-select-sm { font-size: 0.75rem !important; padding-right: 20px !important; }
 
-        #citire-text { font-family: 'Lora', serif; font-size: 1.2rem; background: white; padding: 15px; border-radius: 15px; }
-        .verse-num { color: var(--p); font-weight: 800; font-size: 0.75rem; margin-right: 5px; background: #eee; padding: 1px 4px; border-radius: 3px; }
-        .highlight { background: #fff3cd; }
+        #q-txt { font-family: 'Lora', serif; font-size: 1.1rem; line-height: 1.4; color: #2c3e50; margin-bottom: 10px; max-height: 140px; overflow-y: auto; }
+        .quiz-btn { padding: 10px !important; font-size: 0.85rem !important; margin-bottom: 6px; border-radius: 12px !important; }
+
+        #citire-text { font-family: 'Lora', serif; font-size: 1.15rem; background: white; padding: 15px; border-radius: 15px; text-align: justify; }
+        .verse-num { color: var(--p); font-weight: 800; font-size: 0.7rem; margin-right: 4px; background: #eee; padding: 1px 3px; border-radius: 3px; }
+        .highlight { background: #fff3cd; border-radius: 4px; padding: 2px 0; }
 
         .btn-home-float { 
             position: fixed; bottom: 15px; right: 15px; 
@@ -86,9 +53,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; 
             display: flex; align-items: center; justify-content: center; 
         }
-
-        /* Mesajul de rezultat sa fie vizibil imediat */
-        #q-res { min-height: 30px; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -117,18 +81,21 @@
         </div>
 
         <div class="tab-pane fade" id="read">
-            <div class="bg-white p-2 rounded-4 mb-2 shadow-sm d-flex gap-1 sticky-top">
-                <select id="sel-c" class="form-select form-select-sm" onchange="updateCap()"></select>
-                <select id="sel-cap" class="form-select form-select-sm" onchange="showCap()"></select>
+            <div class="bg-white p-2 rounded-4 mb-2 shadow-sm sticky-top">
+                <div class="bible-nav-row">
+                    <select id="sel-c" class="form-select form-select-sm" onchange="updateCap()"></select>
+                    <select id="sel-cap" class="form-select form-select-sm" onchange="showCap()"></select>
+                    <select id="sel-v" class="form-select form-select-sm" onchange="goToV()"></select>
+                </div>
             </div>
             <div id="citire-text">Selectează...</div>
         </div>
 
         <div class="tab-pane fade" id="quiz">
-            <div class="card-premium" style="padding: 15px;">
-                <div id="q-txt" class="p-2 bg-light rounded-3 text-center"></div>
+            <div class="card-premium">
+                <div id="q-txt" class="p-2 bg-light rounded-3 text-center italic"></div>
                 <div id="q-opts" class="d-grid"></div>
-                <div id="q-res" class="text-center fw-bold fs-6"></div>
+                <div id="q-res" class="text-center fw-bold mt-1"></div>
             </div>
         </div>
     </div>
@@ -138,7 +105,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // Logica ramane aceeasi, am curatat doar interactiunea cu interfata
     window.onload = () => setTimeout(genereazaVerset, 600);
 
     function goHome() {
@@ -167,7 +133,7 @@
         const caps = [...new Set(bibleData.verses.filter(v => v.book_name === c).map(v => v.chapter))];
         const sc = document.getElementById('sel-cap');
         sc.innerHTML = "";
-        caps.forEach(cp => sc.add(new Option("Cap. " + cp, cp)));
+        caps.forEach(cp => sc.add(new Option("C." + cp, cp)));
         showCap();
     }
 
@@ -176,7 +142,22 @@
         const cp = parseInt(document.getElementById('sel-cap').value);
         const vers = bibleData.verses.filter(v => v.book_name === c && v.chapter === cp);
         const cont = document.getElementById('citire-text');
-        cont.innerHTML = vers.map(v => `<span><span class="verse-num">${v.verse}</span>${v.text} </span>`).join('');
+        cont.innerHTML = vers.map(v => `<span id="v-${v.verse}"><span class="verse-num">${v.verse}</span>${v.text} </span>`).join('');
+        
+        const sv = document.getElementById('sel-v');
+        sv.innerHTML = '<option value="0">V.</option>';
+        vers.forEach(v => sv.add(new Option(v.verse, v.verse)));
+    }
+
+    function goToV() {
+        const v = document.getElementById('sel-v').value;
+        if(v == 0) return;
+        document.querySelectorAll('.highlight').forEach(el => el.classList.remove('highlight'));
+        const target = document.getElementById('v-' + v);
+        if(target) {
+            target.classList.add('highlight');
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
 
     let ok = "";
@@ -212,7 +193,7 @@
                     document.getElementById('q-res').innerHTML = `<span class='text-danger'>ERA ${ok} ❌</span>`;
                     Array.from(od.children).forEach(btn => { if(btn.innerText === ok) btn.className = "btn btn-success quiz-btn text-white"; });
                 }
-                setTimeout(startQuiz, 2000);
+                setTimeout(startQuiz, 2200);
             };
             od.appendChild(b);
         });
