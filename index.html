@@ -265,6 +265,22 @@
                     <button class="btn-circle d-inline-flex ms-2" onclick="changeFontSize(2)">A+</button>
                 </div>
                 <div class="card-premium p-2 mb-2 sticky-top" style="top: 60px; z-index: 5;">
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text bg-transparent border-0"><i class="fas fa-bolt text-warning"></i></span>
+                        <input type="text" id="quick-go" class="form-control border-0 shadow-none" placeholder="Mergi la... (ex: Ioan 3:16)" onkeyup="if(event.key==='Enter') smartGo()">
+                        <button class="btn btn-sm btn-outline-primary border-0" onclick="smartGo()">GO</button>
+                    </div>
+
+                    <div class="d-flex gap-1 mb-2" style="overflow-x: auto; white-space: nowrap; padding-bottom: 5px; scrollbar-width: none;">
+                        <button class="btn btn-xs btn-light rounded-pill border py-0 px-2" style="font-size: 0.65rem;" onclick="quickLink('Psalmii 23')">Ps. 23</button>
+                        <button class="btn btn-xs btn-light rounded-pill border py-0 px-2" style="font-size: 0.65rem;" onclick="quickLink('Matei 6:9')">Tatăl Nostru</button>
+                        <button class="btn btn-xs btn-light rounded-pill border py-0 px-2" style="font-size: 0.65rem;" onclick="quickLink('1 Corinteni 13')">Iubirea</button>
+                        <button class="btn btn-xs btn-light rounded-pill border py-0 px-2" style="font-size: 0.65rem;" onclick="quickLink('Ioan 1')">Cuvântul</button>
+                        <button class="btn btn-xs btn-light rounded-pill border py-0 px-2" style="font-size: 0.65rem;" onclick="quickLink('Efeseni 6:10')">Armura</button>
+                    </div>
+
+                    <hr class="my-1 opacity-25">
+                    
                     <div class="d-flex gap-1">
                         <select id="sel-c" class="form-select form-select-sm" onchange="updateCap()"></select>
                         <select id="sel-cap" class="form-select form-select-sm" onchange="showCap()"></select>
@@ -278,7 +294,7 @@
             </div>
 
             <div class="tab-pane fade" id="saved">
-                <div class="card-premium">
+                <div class="p-2"> 
                     <h5 class="fw-bold mb-3"><i class="fas fa-bookmark me-2 text-danger"></i>Versete Salvate</h5>
                     <div id="lista-salvate"></div>
                 </div>
@@ -344,16 +360,122 @@
     let audioCtx = null;
     let ultimaStareSelectata = "";
 
-    // --- LOGICA NOTIFICARI (VARIANTA FINALA) ---
-    const inputOra = document.getElementById('oraNotificare');
+    // NOU: Funcții pentru Smart Go și Quick Links
+    function quickLink(ref) {
+        document.getElementById('quick-go').value = ref;
+        smartGo();
+    }
 
+    function smartGo() {
+    const input = document.getElementById('quick-go').value.trim();
+    if (!input) return;
+
+    // Regex care acceptă: "Nume" "Capitol" sau "Nume" "Capitol:Verset"
+    const regex = /^(\d?\s?[a-zA-ZăîâșțĂÎÂȘȚ\s\.]+)\s(\d+)(?:\s?[:\s]\s?(\d+))?$/i;
+    const match = input.match(regex);
+
+    if (match) {
+        let textCarteIntrodus = match[1].toLowerCase().trim();
+        const capCautat = match[2];
+        const versetCautat = match[3];
+
+        const selectCarte = document.getElementById('sel-c');
+        let indexGasit = -1;
+
+        // PARTE DE DESTEPTACIUNE: Căutăm în lista de opțiuni a selectului
+        for (let i = 0; i < selectCarte.options.length; i++) {
+            let numeCarteDinBiblie = selectCarte.options[i].value.toLowerCase();
+            
+            // Verificăm dacă ce a scris utilizatorul se potrivește cu începutul unei cărți
+            // Exemplu: "1 cor" se va potrivi cu "1 corinteni"
+            // Exemplu: "efes" se va potrivi cu "efeseni"
+            if (numeCarteDinBiblie.startsWith(textCarteIntrodus) || textCarteIntrodus.startsWith(numeCarteDinBiblie)) {
+                indexGasit = i;
+                break;
+            }
+        }
+
+        if (indexGasit !== -1) {
+            selectCarte.selectedIndex = indexGasit;
+            updateCap(); // Încarcă capitolele pentru cartea găsită
+            
+            const selectCap = document.getElementById('sel-cap');
+            // Verificăm dacă capitolul există
+            if ([...selectCap.options].some(opt => opt.value == capCautat)) {
+                selectCap.value = capCautat;
+                showCap(); // Afișează textul capitolului
+
+                if (versetCautat) {
+                    setTimeout(() => {
+                        const selectVerset = document.getElementById('sel-v');
+                        if ([...selectVerset.options].some(opt => opt.value == versetCautat)) {
+                            selectVerset.value = versetCautat;
+                            sariLaVerset();
+                        }
+                    }, 300);
+                }
+                document.getElementById('quick-go').value = ""; 
+            } else {
+                alert("Cartea are mai puține capitole decât " + capCautat);
+            }
+        } else { 
+            alert("Nu am găsit nicio carte care să înceapă cu '" + textCarteIntrodus + "'"); 
+        }
+    } else { 
+        alert("Format incorect. Folosește: 'Carte Capitol:Verset' (ex: Romani 8:1)"); 
+    }
+}
+
+    function cautaGlobal() {
+        let input = document.getElementById('search-bible').value.trim();
+        if (input.length < 3) { alert("Introdu cel puțin 3 litere."); return; }
+
+        // 1. Verificăm dacă este o referință (ex: "Ioan 3:16" sau "Geneza 2")
+        const regexRef = /^(\d?\s?[a-zA-ZăîâșțĂÎÂȘȚ\s\.]+)\s(\d+)(?:\s?[:\s]\s?(\d+))?$/i;
+        const esteReferinta = input.match(regexRef);
+
+        if (esteReferinta) {
+            // Dacă e referință, trimitem textul la smartGo() și ne oprim
+            document.getElementById('quick-go').value = input;
+            smartGo();
+            document.getElementById('search-bible').value = "";
+            return; 
+        }
+
+        // 2. Dacă NU e referință, facem căutarea normală de cuvinte
+        let query = input.toLowerCase();
+        const resBox = document.getElementById('search-results-box');
+        const resList = document.getElementById('search-results-list');
+        const resCount = document.getElementById('search-count');
+        
+        let rezultate = bibleData.verses.filter(v => v.text.toLowerCase().includes(query));
+        
+        resList.innerHTML = "";
+        resBox.style.display = "block";
+        resCount.innerText = `Am găsit ${rezultate.length} rezultate pentru "${input}":`;
+        
+        if (rezultate.length === 0) { 
+            resList.innerHTML = "<p class='small text-muted'>Niciun rezultat găsit.</p>"; 
+            return; 
+        }
+
+        resList.innerHTML = rezultate.map(v => {
+            const ref = `${v.book_name} ${v.chapter}:${v.verse}`;
+            const textEvidentiat = v.text.replace(new RegExp(query, 'gi'), match => `<mark>${match}</mark>`);
+            return `
+                <div class="search-item" onclick="navigheazaLaRef('${ref}')">
+                    <div class="ref-link" style="font-size: 0.7rem;">${ref}</div>
+                    <div class="small" style="line-height: 1.3;">${textEvidentiat}</div>
+                </div>`;
+        }).join('');
+    }
+
+    // --- LOGICA NOTIFICARI ---
+    const inputOra = document.getElementById('oraNotificare');
     if (inputOra) {
         const oraSalvata = localStorage.getItem('ora_notificare') || "06:00";
         inputOra.value = oraSalvata;
-
-        inputOra.addEventListener('change', () => {
-            localStorage.setItem('ora_notificare', inputOra.value);
-        });
+        inputOra.addEventListener('change', () => { localStorage.setItem('ora_notificare', inputOra.value); });
     }
 
     function activeazaNotificari() {
@@ -396,18 +518,12 @@
         const oraSetataUtilizator = localStorage.getItem('ora_notificare') || "06:00";
         const [ora, minut] = oraSetataUtilizator.split(':').map(Number);
         const azi = acum.toDateString();
-
-        if (acum.getHours() === ora && 
-            acum.getMinutes() === minut && 
-            localStorage.getItem('notificari_active') === 'true' &&
-            localStorage.getItem('ultima_notificare') !== azi) {
-            
+        if (acum.getHours() === ora && acum.getMinutes() === minut && localStorage.getItem('notificari_active') === 'true' && localStorage.getItem('ultima_notificare') !== azi) {
             trimiteNotificareLocala();
             localStorage.setItem('ultima_notificare', azi);
         }
     }, 60000);
 
-    // --- FUNCȚII NOI (1, 2, 4) ---
     function bifeazaCapitol() {
         const carte = document.getElementById('sel-c').value;
         const cap = document.getElementById('sel-cap').value;
@@ -448,13 +564,6 @@
         }
     }
 
-    function salveazaNota(index, valoare) {
-        let s = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
-        s[index].nota = valoare;
-        localStorage.setItem('biblia_salvate', JSON.stringify(s));
-    }
-
-    // --- RESTUL FUNCTIILOR ---
     function goToFeature(feature) {
         const welcome = document.getElementById('welcome-screen');
         welcome.style.transform = "translateY(-100%)";
@@ -524,13 +633,9 @@
         pasActual = 0; score = 0;
         document.getElementById('score-display').innerHTML = `<i class="fas fa-star me-1 text-warning"></i>Scor: 0`;
         let colectie = [];
-        if(nivel === 'usor') {
-            colectie = intrebariBiblice.filter((_, i) => [1, 2, 5, 7, 10, 12, 14, 18, 19, 26].includes(i));
-        } else if(nivel === 'mediu') {
-            colectie = intrebariBiblice.filter((_, i) => [0, 3, 4, 6, 8, 9, 11, 13, 20, 29].includes(i));
-        } else if(nivel === 'avansat') {
-            colectie = intrebariBiblice.filter((_, i) => [15, 16, 17, 21, 22, 23, 24, 25, 27, 28].includes(i));
-        }
+        if(nivel === 'usor') { colectie = intrebariBiblice.filter((_, i) => [1, 2, 5, 7, 10, 12, 14, 18, 19, 26].includes(i));
+        } else if(nivel === 'mediu') { colectie = intrebariBiblice.filter((_, i) => [0, 3, 4, 6, 8, 9, 11, 13, 20, 29].includes(i));
+        } else if(nivel === 'avansat') { colectie = intrebariBiblice.filter((_, i) => [15, 16, 17, 21, 22, 23, 24, 25, 27, 28].includes(i)); }
         intrebariSession = [...colectie].sort(() => 0.5 - Math.random());
         document.getElementById('quiz-difficulty').classList.add('d-none');
         document.getElementById('quiz-box').classList.remove('d-none');
@@ -624,7 +729,6 @@
         const tab = new bootstrap.Tab(trigger);
         tab.show();
         initRead();
-        
         const selectCarte = document.getElementById('sel-c');
         const searchName = parts[1].toLowerCase();
         for (let i = 0; i < selectCarte.options.length; i++) {
@@ -633,7 +737,6 @@
                 break;
             }
         }
-        
         updateCap();
         document.getElementById('sel-cap').value = parts[2];
         showCap();
@@ -661,32 +764,96 @@
         let s = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
         const ref = `${book} ${cap}:${vNum}`;
         if (!s.some(x => x.ref === ref)) {
-            s.push({ ref, text });
+            s.push({ ref, text, culoare: 'var(--card)', nota: '' });
             localStorage.setItem('biblia_salvate', JSON.stringify(s));
-            alert("Salvat!");
+            alert("Salvat în colecție!");
         }
     }
 
     function afiseazaSalvate() {
         const container = document.getElementById('lista-salvate');
         let s = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
-        if (s.length === 0) { container.innerHTML = '<p class="text-muted small">Niciun verset salvat încă.</p>'; return; }
+        if (s.length === 0) { 
+            container.innerHTML = '<p class="text-muted small">Niciun verset salvat încă.</p>'; 
+            return; 
+        }
         
-        container.innerHTML = s.map((v, i) => `
-            <div class="card-premium mb-2 p-3 shadow-sm" style="border-left: 4px solid var(--a)">
-                <div class="ref-link mb-1" onclick="navigheazaLaRef('${v.ref}')">${v.ref}</div>
-                <div class="small">${v.text}</div>
-                <textarea class="note-input" placeholder="Adaugă un gând sau o rugăciune..." 
+        const culori = [
+            { nume: 'Implicit', cod: 'var(--card)' },
+            { nume: 'Galben', cod: '#fff9c4' },
+            { nume: 'Verde', cod: '#c8e6c9' },
+            { nume: 'Albastru', cod: '#bbdefb' },
+            { nume: 'Roz', cod: '#f8bbd0' }
+        ];
+
+        container.innerHTML = s.map((v, i) => {
+            let bgStyle = v.culoare || 'var(--card)';
+            let isDarkTheme = document.body.classList.contains('dark-theme');
+            let textStyle = (isDarkTheme && bgStyle === 'var(--card)') ? '#e0e0e0' : '#2c3e50';
+
+            return `
+            <div id="card-salvat-${i}" class="card-premium mb-3 p-3 shadow-sm" style="background-color: ${bgStyle}; border-left: 5px solid var(--a); color: ${textStyle}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="ref-link" onclick="navigheazaLaRef('${v.ref}')" style="font-size: 0.9rem;">${v.ref}</div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm p-0" data-bs-toggle="dropdown"><i class="fas fa-palette text-muted"></i></button>
+                        <ul class="dropdown-menu shadow">
+                            ${culori.map(c => `<li><a class="dropdown-item small" href="#" onclick="schimbaCuloareaVerset(${i}, '${c.cod}')">${c.nume}</a></li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+                <div class="small mb-2 fst-italic" style="line-height: 1.4;">"${v.text}"</div>
+                <textarea class="note-input mb-2" placeholder="Notițe / Gânduri..." 
                     onchange="salveazaNota(${i}, this.value)">${v.nota || ''}</textarea>
-                <button onclick="stergeVerset(${i})" class="btn btn-sm text-danger p-0 mt-1" style="font-size:0.7rem;">Șterge</button>
-            </div>`).join('');
+                
+                <div class="d-flex justify-content-between align-items-center border-top pt-2">
+                    <button onclick="stergeVerset(${i})" class="btn btn-sm text-danger p-0" style="font-size:0.75rem;"><i class="fas fa-trash me-1"></i>Șterge</button>
+                    <button onclick="shareAsCard(${i})" class="btn btn-sm btn-primary rounded-pill px-3" style="font-size:0.7rem;"><i class="fas fa-share-alt me-1"></i> TRIMITE CARD</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function schimbaCuloareaVerset(index, culoare) {
+        let s = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
+        if(s[index]) {
+            s[index].culoare = culoare;
+            localStorage.setItem('biblia_salvate', JSON.stringify(s));
+            afiseazaSalvate();
+        }
+    }
+
+    function shareAsCard(index) {
+        let s = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
+        const v = s[index];
+        const textShare = `📖 BIBLIA PRO\n\n"${v.text}"\n\nRef: ${v.ref}\n${v.nota ? 'Gând: ' + v.nota : ''}`;
+        
+        if (navigator.share) {
+            navigator.share({ title: 'Verset Salvat', text: textShare }).catch(() => copyToClipboard(textShare));
+        } else {
+            copyToClipboard(textShare);
+        }
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => alert("Textul cardului a fost copiat!"));
+    }
+
+    function salveazaNota(index, valoare) {
+        let s = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
+        if(s[index]) {
+            s[index].nota = valoare;
+            localStorage.setItem('biblia_salvate', JSON.stringify(s));
+        }
     }
 
     function stergeVerset(i) {
-        let s = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
-        s.splice(i, 1);
-        localStorage.setItem('biblia_salvate', JSON.stringify(s));
-        afiseazaSalvate();
+        if(confirm("Ștergi acest verset?")) {
+            let s = JSON.parse(localStorage.getItem('biblia_salvate') || '[]');
+            s.splice(i, 1);
+            localStorage.setItem('biblia_salvate', JSON.stringify(s));
+            afiseazaSalvate();
+        }
     }
 
     function initRead() {
@@ -734,24 +901,6 @@
             document.getElementById('rand-text').innerText = v.text;
             document.getElementById('rand-ref').innerText = v.book_name + " " + v.chapter + ":" + v.verse;
         }
-    }
-
-    function cautaGlobal() {
-        let query = document.getElementById('search-bible').value.trim().toLowerCase();
-        if (query.length < 3) { alert("Introdu cel puțin 3 litere."); return; }
-        const resBox = document.getElementById('search-results-box');
-        const resList = document.getElementById('search-results-list');
-        const resCount = document.getElementById('search-count');
-        let rezultate = bibleData.verses.filter(v => v.text.toLowerCase().includes(query));
-        resList.innerHTML = "";
-        resBox.style.display = "block";
-        resCount.innerText = `Am găsit ${rezultate.length} rezultate:`;
-        if (rezultate.length === 0) { resList.innerHTML = "<p class='small text-muted'>Niciun rezultat găsit.</p>"; return; }
-        resList.innerHTML = rezultate.map(v => {
-            const ref = `${v.book_name} ${v.chapter}:${v.verse}`;
-            const textEvidentiat = v.text.replace(new RegExp(query, 'gi'), match => `<mark>${match}</mark>`);
-            return `<div class="search-item" onclick="navigheazaLaRef('${ref}')"><div class="ref-link" style="font-size: 0.7rem;">${ref}</div><div class="small" style="line-height: 1.3;">${textEvidentiat}</div></div>`;
-        }).join('');
     }
 
     function vStare(stare) {
@@ -823,7 +972,6 @@
         { q: "Ce râu a fost folosit pentru botezul lui Isus?", a: ["Nil", "Eufrat", "Iordan", "Tigru"], c: 2, r: "Matei 3:13" }
     ];
 </script>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
