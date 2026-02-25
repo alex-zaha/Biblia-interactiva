@@ -1,4 +1,4 @@
-const CACHE_NAME = 'biblia-pro-v2'; // Am schimbat versiunea pentru a forța reîmprospătarea
+const CACHE_NAME = 'biblia-pro-v3'; // Versiune nouă pentru refresh
 const ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,6 @@ const ASSETS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      // Folosim addAll dar cu grijă pentru a nu bloca instalarea dacă un fișier lipsește
       return cache.addAll(ASSETS);
     })
   );
@@ -29,20 +28,22 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// DESCHIDERE APLICAȚIE LA CLICK PE NOTIFICARE
+// --- MODIFICAREA AICI: LOGICA PENTRU CLICK PE NOTIFICARE ---
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   
-  // În loc de cale relativă, folosim rădăcina site-ului
-  const rootUrl = new URL('./', self.location.origin).href;
+  // Aici am adăugat calea exactă a repository-ului tău
+  const rootUrl = new URL('/Biblia-interactiva/', self.location.origin).href;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+      // Verificăm dacă aplicația este deja deschisă
       for (let client of windowClients) {
         if (client.url === rootUrl && 'focus' in client) {
           return client.focus();
         }
       }
+      // Dacă nu este deschisă, o deschidem la adresa corectă
       if (clients.openWindow) {
         return clients.openWindow(rootUrl);
       }

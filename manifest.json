@@ -1,8 +1,8 @@
 {
   "name": "Biblia Pro",
   "short_name": "BibliaPro",
-  "start_url": "./index.html",
-  "scope": "./",
+  "start_url": "/Biblia-interactiva/index.html",
+  "scope": "/Biblia-interactiva/",
   "display": "standalone",
   "background_color": "#1a2a6c",
   "theme_color": "#1a2a6c",
